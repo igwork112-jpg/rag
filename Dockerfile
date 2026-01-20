@@ -7,7 +7,6 @@ WORKDIR /app
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-ENV PORT=5000
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -26,8 +25,8 @@ COPY . .
 # Create uploads directory
 RUN mkdir -p uploads
 
-# Expose port (Railway will override with its own PORT)
-EXPOSE ${PORT}
+# Create startup script that properly expands PORT
+RUN echo '#!/bin/bash\nexec gunicorn app.main:app --bind 0.0.0.0:${PORT:-5000} --workers 2 --timeout 120' > /start.sh && chmod +x /start.sh
 
-# Run with gunicorn - Railway sets PORT env var at runtime
-CMD gunicorn app.main:app --bind 0.0.0.0:${PORT} --workers 2 --timeout 120
+# Run with shell script
+CMD ["/start.sh"]
